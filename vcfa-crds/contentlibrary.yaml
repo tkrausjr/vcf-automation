@@ -1,0 +1,19 @@
+apiVersion: v1
+items:
+- apiVersion: imageregistry.vmware.com/v1alpha1
+  kind: ContentLibrary
+  metadata:
+    name: cl-2cf55a6d1031c1b8e
+    namespace: production-c5b8n
+  spec:
+    allowImport: false
+    resourceNamingStrategy: PREFER_ITEM_SOURCE_ID
+    uuid: 5d131c06-2446-4647-bf04-e6276ebbeb37
+    writable: false
+  status:
+    name: vcfa-vmsvc
+    storageBacking:
+      datastoreID: datastore-21
+      type: Datastore
+    type: Local
+kind: List

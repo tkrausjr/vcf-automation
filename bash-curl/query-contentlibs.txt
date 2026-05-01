@@ -1,0 +1,17 @@
+curl -H 'Authorization: 'Gzy8gHueTtYu20ODUJfx3asdZ7NWveuC' https://auto-a.site-a.vcf.lab/cloudapi/vcf/contentLibraries?page=value&pageSize=v
+
+curl -ik -H 'Accept: application/json;version=40.0'  -H 'Authorization: Bearer Gzy8gHueTtYu20ODUJfx3asdZ7NWveuC' 'https://auto-a.site-a.vcf.lab/cloudapi/vcf/contentLibraries?'
+
+As Provider Admin
+curl -ik -H 'Accept: application/json;version=40.0'  -H 'Authorization: Bearer FpM3zTkI8TmuWpTsU8tiVbenGLpSaUvf' 'https://auto-a.site-a.vcf.lab/cloudapi/vcf/contentLibraries?'
+
+curl vvv -ik -H 'Accept: application/json;version=40.0'  -H 'Authorization: FpM3zTkI8TmuWpTsU8tiVbenGLpSaUvf' -X GET 'https://auto-a.site-a.vcf.lab/cloudapi/vcf/contentLibraries?page=1&pageSize=128'
+
+Cant get this working - Getting Authentication issues with CURL and both Provider API Token & Broadcom org Admin Token
+
+Then tried to do it with native K8s YAML but this is hard / impossible also
+
+k apply -f ./github/vcf-automation/vcfa-crds/contentlibrary.yaml 
+Some fields are required during submission but also look like they are generated 
+such as spec.uuid:
+Also commonname is listed under status: section (Weird)
