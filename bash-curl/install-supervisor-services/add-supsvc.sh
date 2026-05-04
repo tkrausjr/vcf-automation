@@ -5,9 +5,20 @@
 ###################################################
 
 VCENTER_VERSION=9
-VCENTER_HOSTNAME=vc-wld01-a.site-a.vcf.lab
-VCENTER_USERNAME=administrator@wld.sso
-VCENTER_PASSWORD='VMware123!VMware123!'
+
+###################################################
+# Import .env Shell Variables
+###################################################
+# In your bash script:
+if [ -f .env ]; then  # Automatically export all variables defined in .env
+  set -a
+    source .env
+	  set +a
+	  fi
+
+	  echo "Your Target vCenter is: $VCENTER_HOSTNAME"
+
+###################################################
 
 ###################################################
 
