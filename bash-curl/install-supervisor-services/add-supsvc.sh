@@ -9,7 +9,7 @@ VCENTER_VERSION=9
 ###################################################
 # Import .env Shell Variables
 ###################################################
-# In your bash script:
+# Obtain sensitive information from .env file in the folder where script will run
 if [ -f .env ]; then  # Automatically export all variables defined in .env
   set -a
     source .env
@@ -40,8 +40,12 @@ echo "Getting Supervisor ID"
 SUPERVISOR_ID=$(curl -sk -X GET 'https://vc-wld01-a.site-a.vcf.lab/api/vcenter/namespace-management/supervisors/summaries' -H "${HEADER_SESSIONID}" -H 'Content-Type: application/json' | jq -r '.items[0].supervisor')
 echo $SUPERVISOR_ID
 
-read -p "Press [Enter] to continue . . . "
+# read -p "Press [Enter] to continue . . . "
 
+# Below Temporary Exclusion of Supervisor Services code to test vSphere Namespace addition
+: <<'COMMENT'
+
+echo "Adding Supervisor Services to vCenter.."
 for filename in supsvc-*.*ml; do
 
 	echo "Processing file - ${filename} ..."
@@ -64,16 +68,38 @@ LCI_SERVICE_SPEC='{"supervisor_service": "cci-ns.vmware.com","version": "9.0.1+1
 echo $LCI_SERVICE_SPEC
 curl -k -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${LCI_SERVICE_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisors/${SUPERVISOR_ID}/supervisor-services
 
-# PLACEHOLDER For ARGOCD - Same thing we did with LCI Above
-#echo "Setting up ArgoCD on Supervisor"
+echo "Setting up ArgoCD on Supervisor"
 # Reference - https://developer.broadcom.com/xapis/vsphere-automation-api/latest/api/vcenter/namespace-management/supervisors/supervisor/supervisor-services/post/
-#ARGO_SERVICE_SPEC='{"supervisor_service": "cci-ns.vmware.com","version": "9.0.1+1815f87b"}'
-#echo $ARGO_SERVICE_SPEC
-#curl -k -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${LCI_SERVICE_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisors/${SUPERVISOR_ID}/supervisor-services
+ARGO_SERVICE_SPEC='{"supervisor_service": "argocd-service.vsphere.vmware.com","version": "1.0.1-24896502"}'
+echo $ARGO_SERVICE_SPEC
+curl -k -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${ARGO_SERVICE_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisors/${SUPERVISOR_ID}/supervisor-services
 
+COMMENT
+# Above TEMPORARY for debugging to comment out all Supervisor Services 
 
-echo "\n Listing Supervisor Services"
+echo -e "\n Listing Supervisor Services"
 SUP_SVCS=$(curl -sk -X GET -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisor-services)
 echo "$SUP_SVCS"
 
-# rm -f temp_final.json
+rm -f temp_final.json
+
+## 1 - List Namespaces
+VSPHERE_NAMESPACES=$(curl -sk -X GET -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" https://${VCENTER_HOSTNAME}/api/vcenter/namespaces/instances/v2)
+echo -e "\n Listing current vSphere Namespaces by Name. \n"
+echo "$VSPHERE_NAMESPACES" | jq -r '.[].namespace'
+#echo -e "\n Listing current vSphere Namespaces Raw. \n$VSPHERE_NAMESPACES"
+
+## 2 - Create Namespaces
+# REF https://ask-vcf-services.broadcom.net/c/97a9c9a6-540f-4ac8-9dc2-f8f3db989dfc
+# Doc Ref https://developer.broadcom.com/xapis/vsphere-automation-api/latest/api/vcenter/namespaces/instances/v2/post/
+NAMESPACE_CREATION_SPEC='{"supervisor":"7ade15cd-1efa-4b27-92b2-2951fb4f7c87","namespace":"shared-svcs","content_libraries": [{ "content_library": "5d131c06-2446-4647-bf04-e6276ebbeb37"}]}'
+NAMESPACES_MESSAGE=$(curl -sk -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${NAMESPACE_CREATION_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespaces/instances/v2 | jq -r '.messages.[].default_message')
+NAMESPACES_STATUS=$(curl -sk -w '%{http_code}' --output /dev/null -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${NAMESPACE_CREATION_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespaces/instances/v2)
+
+echo -e "\nNew vSphere Namespace Creation status: $NAMESPACES_STATUS" 
+echo -e "New vSphere Namespace Creation Message: $NAMESPACES_MESSAGE" 
+
+## 3 - List Namespaces
+VSPHERE_NAMESPACES=$(curl -sk -X GET -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" https://${VCENTER_HOSTNAME}/api/vcenter/namespaces/instances/v2)
+echo -e "\n Listing current vSphere Namespaces by Name. \n"
+echo "$VSPHERE_NAMESPACES" | jq -r '.[].namespace'
