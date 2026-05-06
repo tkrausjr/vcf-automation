@@ -70,7 +70,7 @@ curl -k -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${LCI_SE
 
 echo "Setting up ArgoCD on Supervisor"
 # Reference - https://developer.broadcom.com/xapis/vsphere-automation-api/latest/api/vcenter/namespace-management/supervisors/supervisor/supervisor-services/post/
-ARGO_SERVICE_SPEC='{"supervisor_service": "argocd-service.vsphere.vmware.com","version": "1.0.1-24896502"}'
+ARGO_SERVICE_SPEC='{"supervisor_service": "argocd-service.vsphere.vmware.com","version": "1.1.0-25100889"}'
 echo $ARGO_SERVICE_SPEC
 curl -k -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${ARGO_SERVICE_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisors/${SUPERVISOR_ID}/supervisor-services
 
@@ -82,8 +82,8 @@ SECRET_SERVICE_SPEC='{"supervisor_service": "secret-store.vsphere.vmware.com","v
 echo $SECRET_SERVICE_SPEC
 curl -k -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${SECRET_SERVICE_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisors/${SUPERVISOR_ID}/supervisor-services
 
-echo "Sleeping 60 seconds for Supervisor Services Operators and webhooks to come online ..."
-sleep 60
+echo "Sleeping 45 seconds for Supervisor Services Operators and webhooks to come online ..."
+sleep 40
 
 #COMMENT
 # Above TEMPORARY for debugging to comment out all Supervisor Services 
@@ -97,8 +97,8 @@ rm -f temp_final.json
 ###################################################
 ## 3 - List Namespaces
 VSPHERE_NAMESPACES=$(curl -sk -X GET -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" https://${VCENTER_HOSTNAME}/api/vcenter/namespaces/instances/v2)
-echo -e "\n Listing current vSphere Namespaces by Name. \n"
-echo "$VSPHERE_NAMESPACES" | jq -r '.[].namespace'
+#echo -e "\n Listing current vSphere Namespaces by Name. \n"
+#echo "$VSPHERE_NAMESPACES" | jq -r '.[].namespace'
 #echo -e "\n Listing current vSphere Namespaces Raw. \n$VSPHERE_NAMESPACES"
 
 ###################################################
@@ -115,8 +115,8 @@ echo -e "New vSphere Namespace Creation Message: $NAMESPACES_MESSAGE"
 ###################################################
 ## 5 - List Namespaces again to check for newly create namespace
 VSPHERE_NAMESPACES=$(curl -sk -X GET -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" https://${VCENTER_HOSTNAME}/api/vcenter/namespaces/instances/v2)
-echo -e "\n Listing current vSphere Namespaces by Name. \n"
-echo "$VSPHERE_NAMESPACES" | jq -r '.[].namespace'
+#echo -e "\n Listing current vSphere Namespaces by Name. \n"
+# echo "$VSPHERE_NAMESPACES" | jq -r '.[].namespace'
 
 ###################################################
 ## 6. VCF CLI Setup ---
@@ -145,8 +145,16 @@ kubectl get ns 2>/dev/null
 ## 7 - Adding ArgoCD Instance to the newly created vSphere Namespace
 ## Will need to do things with vcf CLI and then apply the manifest for ArgoCD Instance - from my VKS repo in supervisorservices directory.
 kubectl apply -f argocd-instance.yaml -n shared-svcs 2>/dev/null
+echo "Sleeping 60 seconds for ArgoCD Instance to come online ..."
+sleep 60
 
+# Return the ArgoCD Server LB Service VIP
+#kubectl get po -n shared-svcs -ojson | jq -r '.'
+ARGOCD_IP=$(kubectl get svc argocd-server -n shared-svcs -ojson | jq '.status.loadBalancer.ingress[0].ip' | tr -d '"' )
+echo "ArgoCD App Service VIP is $ARGOCD_IP"
+
+###################################################
 ###################################################
 ## 8 - Changing ArgoCD Password
 ## Will need to do things with vcf CLI and then apply the manifest for ArgoCD Instance - from my VKS repo in supervisorservices directory.
-kubectl get svc -n shared-svcs -ojson | jq -r '.'
+##  Left off HERE - Working up
