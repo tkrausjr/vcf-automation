@@ -82,7 +82,6 @@ SECRET_SERVICE_SPEC='{"supervisor_service": "secret-store.vsphere.vmware.com","v
 echo $SECRET_SERVICE_SPEC
 curl -k -X POST -H "${HEADER_SESSIONID}" -H "${HEADER_CONTENTTYPE}" -d "${SECRET_SERVICE_SPEC}" https://${VCENTER_HOSTNAME}/api/vcenter/namespace-management/supervisors/${SUPERVISOR_ID}/supervisor-services
 
-
 echo "Sleeping 60 seconds for Supervisor Services Operators and webhooks to come online ..."
 sleep 60
 
